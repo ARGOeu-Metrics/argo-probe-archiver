@@ -37,8 +37,6 @@ def process_files(arguments):
 
                 # Checks if files have been modified in the last two hours
                 if modify_time < time_two_hrs_ago:
-                    print("modify_time: ", modify_time) # fromtimestamp
-                    print("time_two_hrs_ago: ", time_two_hrs_ago)
                     nagios.setCode(nagios.WARNING)
                     nagios.writeWarningMessage(
                         f"Today's file in {checked_conf.upper()} directory hasn't been modified in the last 2 hours.")
