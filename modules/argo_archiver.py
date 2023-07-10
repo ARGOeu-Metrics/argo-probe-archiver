@@ -33,7 +33,7 @@ def process_files(arguments):
                 todays_stats = os.stat(f"{directory}/{todays_path}")
 
                 modify_time = datetime.fromtimestamp(todays_stats.st_mtime)
-                time_two_hrs_ago = datetime.now() - timedelta(hours=0, minutes=1)
+                time_two_hrs_ago = datetime.now() - timedelta(hours=2, minutes=0)
 
                 # Checks if files have been modified in the last two hours
                 if modify_time < time_two_hrs_ago:
