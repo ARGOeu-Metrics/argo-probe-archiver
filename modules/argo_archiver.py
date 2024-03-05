@@ -15,10 +15,10 @@ def parse_conf(file):
     return logname, avro_file
 
 
-def inspect_file(consumer_name, avro_file):
+def inspect_file(nagios, consumer_name, avro_file):
     # Checks if files with today's stamp exist in all directories
     todays_date = datetime.today().strftime("%Y-%m-%d")
-    todays_path = avro_file.replace('DATE', todays_date)
+    avro_file = avro_file.replace('DATE', todays_date)
     status_track = dict(CRITICAL=list(), WARNING=list())
 
     import ipdb; ipdb.set_trace()
@@ -29,16 +29,16 @@ def inspect_file(consumer_name, avro_file):
     except FileNotFoundError:
         status_track['CRITICAL'].append(consumer_name)
 
-
-    modify_time = datetime.fromtimestamp(todays_stats.st_mtime)
+    modify_time = datetime.fromtimestamp(stat_file.st_mtime)
     time_two_hrs_ago = datetime.now() - timedelta(hours=2, minutes=0)
 
     # Checks if files have been modified in the last two hours
     if modify_time < time_two_hrs_ago:
-        nagios.setCode(nagios.WARNING)
-        nagios.writeWarningMessage(
-            f"Today's file in {checked_conf.upper()} directory hasn't been modified in the last 2 hours.")
+        nagios.setCode(nagios.CRITICAL)
 
+        nagios.writeCriticalMessage(
+            f"Output file in {os.path.dirname(avro_file)} hasn't been modified in the last 2 hours."
+        )
 
 
 def main():
@@ -48,9 +48,14 @@ def main():
 
     cmd_options = parser.parse_args()
 
+    nagios = NagiosResponse("All ams-consumers are fine")
+
     for conf_file in cmd_options.files:
         consumer_name, avro_file = parse_conf(conf_file)
-        status_file = inspect_file(consumer_name, avro_file)
+        status_file = inspect_file(nagios, consumer_name, avro_file)
+
+    print(nagios.getMsg())
+    raise SystemExit(nagios.getCode())
 
 
 if __name__ == "__main__":
