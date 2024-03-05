@@ -15,13 +15,11 @@ def parse_conf(file):
     return logname, avro_file
 
 
-def inspect_file(nagios, consumer_name, avro_file):
+def inspect_file(nagios, consumer_name, avro_file, hours):
     # Checks if files with today's stamp exist in all directories
     todays_date = datetime.today().strftime("%Y-%m-%d")
     avro_file = avro_file.replace('DATE', todays_date)
     status_track = dict(CRITICAL=list(), WARNING=list())
-
-    import ipdb; ipdb.set_trace()
 
     try:
         stat_file = os.stat(avro_file)
@@ -30,21 +28,22 @@ def inspect_file(nagios, consumer_name, avro_file):
         status_track['CRITICAL'].append(consumer_name)
 
     modify_time = datetime.fromtimestamp(stat_file.st_mtime)
-    time_two_hrs_ago = datetime.now() - timedelta(hours=2, minutes=0)
+    time_two_hrs_ago = datetime.now() - timedelta(hours=hours, minutes=0)
 
     # Checks if files have been modified in the last two hours
     if modify_time < time_two_hrs_ago:
         nagios.setCode(nagios.CRITICAL)
-
         nagios.writeCriticalMessage(
-            f"Output file in {os.path.dirname(avro_file)} hasn't been modified in the last 2 hours."
+            f"Output file in {os.path.dirname(avro_file)} hasn't been modified in the last {hours} hours."
         )
 
 
 def main():
     parser = argparse.ArgumentParser(description="Sensor for checking freshness of avro files that ams-consumer produces")
     parser.add_argument('-f', dest='files', metavar='file', required=True, type=str, nargs='+',
-                        help="Path of ams-consumer.conf files, wildcards allowed to match multiple files")
+                        help="Path of ams-consumer.conf files, wildcards allowed to specify multiple files")
+    parser.add_argument('-t', dest='hours', metavar='hours', required=True, type=int,
+                        help="Number of hours output file should not be older than")
 
     cmd_options = parser.parse_args()
 
@@ -52,7 +51,7 @@ def main():
 
     for conf_file in cmd_options.files:
         consumer_name, avro_file = parse_conf(conf_file)
-        status_file = inspect_file(nagios, consumer_name, avro_file)
+        status_file = inspect_file(nagios, consumer_name, avro_file, cmd_options.hours)
 
     print(nagios.getMsg())
     raise SystemExit(nagios.getCode())
