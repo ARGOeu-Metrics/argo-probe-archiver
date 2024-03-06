@@ -3,8 +3,8 @@ import argparse
 import configparser
 from datetime import datetime, timedelta
 
-from argo_archiver.NagiosResponse import NagiosResponse
-from argo_archiver.utils import errmsg_from_excp
+from argo_probe_archiver.NagiosResponse import NagiosResponse
+from argo_probe_archiver.utils import errmsg_from_excp
 
 
 def parse_conf(file):
