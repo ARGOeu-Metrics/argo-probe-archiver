@@ -23,18 +23,20 @@ def inspect_file(nagios, consumer_name, avro_file, hours):
 
     try:
         stat_file = os.stat(avro_file)
+        modify_time = datetime.fromtimestamp(stat_file.st_mtime)
+        time_two_hrs_ago = datetime.now() - timedelta(hours=hours, minutes=0)
+
+        # Checks if files have been modified in the last two hours
+        if modify_time < time_two_hrs_ago:
+            nagios.setCode(nagios.CRITICAL)
+            nagios.writeCriticalMessage(
+                f"Output file in {os.path.dirname(avro_file)} hasn't been modified in the last {hours} hours."
+            )
 
     except FileNotFoundError:
-        status_track['CRITICAL'].append(consumer_name)
-
-    modify_time = datetime.fromtimestamp(stat_file.st_mtime)
-    time_two_hrs_ago = datetime.now() - timedelta(hours=hours, minutes=0)
-
-    # Checks if files have been modified in the last two hours
-    if modify_time < time_two_hrs_ago:
         nagios.setCode(nagios.CRITICAL)
         nagios.writeCriticalMessage(
-            f"Output file in {os.path.dirname(avro_file)} hasn't been modified in the last {hours} hours."
+            f"Recent output file for {consumer_name} not found."
         )
 
 
